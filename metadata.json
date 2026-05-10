@@ -1,0 +1,6 @@
+{
+  "name": "simple_html_dom",
+  "description": "A modern Simple HTML DOM parser for PHP. Parse, query, extract, and rewrite HTML with CSS selectors using DOMDocument, Symfony CssSelector, Composer, and PSR-4.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
