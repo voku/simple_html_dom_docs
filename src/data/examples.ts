@@ -2,136 +2,126 @@ export const examples: Record<string, { label: string, desc: string, code: strin
   basic_selector: {
     label: "Basic Selectors",
     desc: "Fetching a DOM and finding multiple elements with standard CSS selectors.",
-    code: `<?php
+    code: String.raw`<?php
 
-use voku\\helper\\HtmlDomParser;
-require_once '../vendor/autoload.php';
+use voku\helper\HtmlDomParser;
+require_once __DIR__ . '/vendor/autoload.php';
 
-// get DOM from URL or file
-$html = HtmlDomParser::file_get_html('http://www.google.com/');
+$html = HtmlDomParser::str_get_html(
+    '<article class="featured"><a href="/docs">Docs</a><a href="/api">API</a></article>'
+);
 
-// find all link
-foreach ($html->find('a') as $e) {
-    echo $e->href . '<br>';
-}
-
-// find all tags with class=gb1
-foreach ($html->find('span.gb1') as $e) {
-    echo $e->outertext . '<br>';
-}
-
-// find all td tags with attribute align=center
-foreach ($html->find('td[align=center]') as $e) {
-    echo $e->innertext . '<br>';
+foreach ($html->findMulti('article.featured a[href]') as $link) {
+    echo $link->getAttribute('href') . ' => ' . $link->text() . PHP_EOL;
 }`
   },
   modify_contents: {
     label: "Modify Contents",
     desc: "Dynamically changing nodes with magic properties like outertext.",
-    code: `<?php
+    code: String.raw`<?php
 
-use voku\\helper\\HtmlDomParser;
-require_once '../vendor/autoload.php';
+use voku\helper\HtmlDomParser;
+require_once __DIR__ . '/vendor/autoload.php';
 
-// get DOM from URL or file
-$html = HtmlDomParser::file_get_html('http://www.google.com/');
+$html = HtmlDomParser::str_get_html(
+    '<div class="gallery"><img src="cover.jpg"><input value="draft"></div>'
+);
 
-// replace all image
-foreach ($html->find('img') as $e) {
-    $e->outertext = '<img src="foobar.png">';
+foreach ($html->findMulti('img') as $image) {
+    $image->setAttribute('loading', 'lazy');
+    $image->setAttribute('alt', 'Cover image');
 }
 
-// replace all input
-foreach ($html->find('input') as $e) {
-    $e->outertext = '[INPUT]';
+$input = $html->findOneOrNull('input');
+if ($input !== null) {
+    $input->outertext = '<strong>[INPUT REMOVED]</strong>';
 }
 
-// dump contents
-echo $html;`
+echo $html->save();`
   },
   extract_data: {
     label: "Extract Data",
     desc: "Extract specific data attributes easily.",
-    code: `<?php
+    code: String.raw`<?php
 
-use voku\\helper\\HtmlDomParser;
-require_once '../vendor/autoload.php';
+use voku\helper\HtmlDomParser;
+require_once __DIR__ . '/vendor/autoload.php';
 
-$templateHtml = '
+$templateHtml = <<<'HTML'
 <div>
     <div class="inner">
         <ul>
-          <li><img alt="" src="none.jpg" data-lazyload="/pc/aaa.jpg"></a></li>
-          <li><img alt="" src="none.jpg" data-lazyload="/pc/bbb.jpg"></a></li>
+            <li><img alt="" src="none.jpg" data-lazyload="/pc/aaa.jpg"></li>
+            <li><img alt="" src="none.jpg" data-lazyload="/pc/bbb.jpg"></li>
         </ul>
     </div>
 </div>
-';
+HTML;
 
-$htmlTmp = HtmlDomParser::str_get_html($templateHtml);
-$data_attribute = [];
+$html = HtmlDomParser::str_get_html($templateHtml);
+$dataAttributes = [];
 
-foreach ($htmlTmp->find('.inner img') as $meta) {
-    if ($meta->hasAttribute('data-lazyload')) {
-        $data_attribute[] = $meta->getAttribute('data-lazyload');
-    }
+foreach ($html->findMulti('.inner img[data-lazyload]') as $image) {
+    $dataAttributes[] = $image->getAttribute('data-lazyload');
 }
 
-// dump contents
-var_export($data_attribute, false);`
+var_export($dataAttributes);`
   },
   add_content: {
     label: "Add Content",
     desc: "Append or prepend content within elements.",
-    code: `<?php
+    code: String.raw`<?php
 
-use voku\\helper\\HtmlDomParser;
-require_once '../vendor/autoload.php';
+use voku\helper\HtmlDomParser;
+require_once __DIR__ . '/vendor/autoload.php';
 
-$templateHtml = '<ul><li>test321</li></ul>';
+$list = HtmlDomParser::str_get_html('<ul><li>alpha</li><li>beta</li></ul>');
 
-// add: "<br>" to "<li>"
-$htmlTmp = HtmlDomParser::str_get_html($templateHtml);
-foreach ($htmlTmp->findMulti('ul li') as $li) {
-    $li->innerhtml = '<br>' . $li->innerhtml . '<br>';
-}
-foreach ($htmlTmp->findMulti('br') as $br) {
-    // DEBUG:
-    echo $br->tag; // br
+foreach ($list->findMulti('ul li') as $item) {
+    $item->innerhtml = '<span class="marker">•</span> ' . $item->innertext;
 }
 
-$templateHtml = $htmlTmp->save();
-
-// dump contents
-echo $templateHtml; // <ul><li><br>test321<br></li></ul>`
+echo $list->save();`
   },
   scraping: {
     label: "Scraping Pages",
     desc: "Extract specific data from a website by wrapping functionality into a clean function.",
-    code: `<?php
+    code: String.raw`<?php
 
-use voku\\helper\\HtmlDomParser;
-require_once '../vendor/autoload.php';
+use voku\helper\HtmlDomParser;
+require_once __DIR__ . '/vendor/autoload.php';
 
-function scraping_imdb($url)
+function extractArticleSummary(string $htmlString): array
 {
-    $return = [];
-    $dom = HtmlDomParser::file_get_html($url);
+    $dom = HtmlDomParser::str_get_html($htmlString);
 
-    // get title
-    $return['Title'] = $dom->find('title', 0)->innertext;
+    $author = $dom->findOneOrNull('[rel=author]');
+    $tags = [];
 
-    // get rating
-    $return['Rating'] = $dom->find('.ratingValue strong', 0)->getAttribute('title');
+    foreach ($dom->findMulti('ul.tags li') as $tag) {
+        $tags[] = trim($tag->text());
+    }
 
-    return $return;
+    return [
+        'title' => $dom->findOne('article h1')->text(),
+        'author' => $author !== null ? $author->text() : null,
+        'tags' => $tags,
+    ];
 }
 
-$data = scraping_imdb('http://imdb.com/title/tt0335266/');
+$pageHtml = <<<'HTML'
+<article>
+    <h1>Simple HTML DOM in Production</h1>
+    <a rel="author" href="/authors/voku">voku</a>
+    <ul class="tags">
+        <li>php</li>
+        <li>dom</li>
+        <li>scraping</li>
+    </ul>
+</article>
+HTML;
 
-foreach ($data as $k => $v) {
-    echo '<strong>' . $k . ' </strong>' . $v . '<br>';
-}`
+$summary = extractArticleSummary($pageHtml);
+var_export($summary);`
   }
 };
-
