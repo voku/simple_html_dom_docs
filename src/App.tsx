@@ -166,6 +166,9 @@ export default function App() {
         <section id="examples" className="relative z-10 border-t border-slate-200 bg-white pt-24 pb-12 w-full">
           <div className="max-w-7xl mx-auto px-6 md:px-12">
             <h2 className="text-4xl font-extrabold tracking-tighter mb-12 uppercase border-b border-slate-200 pb-6 text-slate-900">Real APIs, Real Examples</h2>
+            <p className="text-slate-600 text-lg mb-8 max-w-3xl">
+              Each snippet is written for a Composer-installed <code className="text-slate-900 bg-slate-200 px-1 rounded text-sm font-mono">voku/simple_html_dom</code> project and assumes the PHP file lives in the project root beside <code className="text-slate-900 bg-slate-200 px-1 rounded text-sm font-mono">vendor/</code>.
+            </p>
             
             <div className="grid lg:grid-cols-[250px_1fr] gap-8">
               {/* Vertical Tabs */}
