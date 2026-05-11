@@ -78,7 +78,7 @@ require_once __DIR__ . '/vendor/autoload.php';
 $list = HtmlDomParser::str_get_html('<ul><li>alpha</li><li>beta</li></ul>');
 
 foreach ($list->findMulti('ul li') as $item) {
-    $item->innerhtml = '<span class="marker">•</span> ' . $item->innertext;
+    $item->innerhtml = '<span class="marker">•</span> ' . $item->text();
 }
 
 echo $list->save();`
